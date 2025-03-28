@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "847300014670",
+    "project_id": "expenses-tracker-chart-app",
+    "storage_bucket": "expenses-tracker-chart-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:847300014670:android:98f16de50785e0b7ed891f",
+        "android_client_info": {
+          "package_name": "com.makeathingsup.chartapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1vr0nDCMP6YIhkY51zAE_MpMIl9NEwVg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
