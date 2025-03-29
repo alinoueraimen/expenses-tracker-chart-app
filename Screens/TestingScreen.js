@@ -1,138 +1,102 @@
 import React from 'react';
-import { View, Text, Dimensions, StyleSheet } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import { View, Text, Dimensions } from 'react-native';
+import { PieChart } from 'react-native-chart-kit';
 
-const ExpenseIncomeDotsComparison = () => {
-  const screenWidth = Dimensions.get('window').width;
-
-  // Data contoh untuk 7 hari
-  const chartData = {
-    labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
-    datasets: [
-      {
-        data: [1200000, 1900000, 3000000, 2500000, 2200000, 1800000, 3500000],
-        color: (opacity = 1) => `rgba(75, 192, 192, ${opacity})`, // Hijau untuk income
-      },
-      {
-        data: [800000, 1100000, 1500000, 1300000, 1800000, 900000, 1200000],
-        color: (opacity = 1) => `rgba(255, 99, 132, ${opacity})`, // Merah untuk expenses
-      }
-    ],
-    legend: ['Income', 'Expenses']
-  };
-
-  const chartConfig = {
-    backgroundColor: '#ffffff',
-    backgroundGradientFrom: '#ffffff',
-    backgroundGradientTo: '#ffffff',
-    decimalPlaces: 0,
-    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-    style: {
-      borderRadius: 16,
+const NonInteractivePieChart = () => {
+  const thisWeekTransactions = [
+    { 
+      amount: "25", 
+      category: { name: "Coffee" }, 
+      type: "expense" 
     },
-    propsForBackgroundLines: {
-      strokeWidth: 1,
-      stroke: '#e3e3e3',
-      strokeDasharray: '0',
+    { 
+      amount: "120", 
+      category: { name: "Freelance" }, 
+      type: "income" 
     },
-    formatYLabel: (value) => {
-      if (value >= 1000000) {
-        return `Rp${(value / 1000000).toFixed(1)}jt`;
-      }
-      if (value >= 1000) {
-        return `Rp${(value / 1000).toFixed(0)}rb`;
-      }
-      return `Rp${value}`;
+    { 
+      amount: "50", 
+      category: { name: "Transport" }, 
+      type: "expense" 
     },
-    propsForDots: {
-      r: '6', // Ukuran titik
-      strokeWidth: '2',
-      stroke: '#ffffff', // Warna outline titik
+    { 
+      amount: "80", 
+      category: { name: "Lunch" }, 
+      type: "expense" 
+    },
+    { 
+      amount: "200", 
+      category: { name: "Salary" }, 
+      type: "income" 
+    },
+    { 
+      amount: "60", 
+      category: { name: "Entertainment" }, 
+      type: "expense" 
+    },
+    { 
+      amount: "30", 
+      category: { name: "Groceries" }, 
+      type: "expense" 
     }
-  };
+  ];
+
+  // Proses data expenses
+  const expensesData = thisWeekTransactions
+    .filter(item => item.type === "expense")
+    .map((item, index) => ({
+      name: item.category.name,
+      amount: parseFloat(item.amount),
+      color: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40'][index % 6]
+    }));
+
+  const totalExpenses = expensesData.reduce((sum, item) => sum + item.amount, 0);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Perbandingan Income vs Expenses</Text>
-      <Text style={styles.subtitle}>Per Hari dalam Seminggu (Titik)</Text>
-      
-      <LineChart
-        transparent
-        data={chartData}
-        width={screenWidth - 40}
-        height={300}
-        chartConfig={chartConfig}
-        withHorizontalLabels={true}
-        withVerticalLabels={true}
+    <View style={{
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#f5fcff',
+    }}>
+      <PieChart
+        data={expensesData}
+        width={Dimensions.get('window').width - 16}
+        height={220}
+        chartConfig={{
+          backgroundColor: '#ffffff',
+          backgroundGradientFrom: '#ffffff',
+          backgroundGradientTo: '#ffffff',
+          decimalPlaces: 1,
+          color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+        }}
+        accessor="amount"
+        backgroundColor="transparent"
+        paddingLeft="15"
+        absolute={false}
+        hasLegend={true}
+        avoidFalseZero={true}
         style={{
           marginVertical: 8,
           borderRadius: 16,
-         
         }}
-        yAxisLabel="Rp"
-        verticalLabelRotation={0}
-        bezier={false} // Garis lurus
-        withShadow={false} // Tanpa shadow
-        withInnerLines={true}
-        withOuterLines={true}
-        withDots={true} // Tampilkan titik
-        withLine={false} // Sembunyikan garis
       />
-      
-      <View style={styles.legendContainer}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendColor, {backgroundColor: 'rgba(75, 192, 192, 1)'}]} />
-          <Text style={styles.legendText}>Income</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendColor, {backgroundColor: 'rgba(255, 99, 132, 1)'}]} />
-          <Text style={styles.legendText}>Expenses</Text>
-        </View>
+
+      <View style={{
+        marginTop: 20,
+        padding: 10,
+        backgroundColor: '#e0e0e0',
+        borderRadius: 5,
+      }}>
+        <Text style={{
+          fontWeight: 'bold',
+          fontSize: 16,
+        }}>
+          Total Pengeluaran: ${totalExpenses.toFixed(2)}
+        </Text>
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-   
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    textAlign: 'center',
-    color: '#333',
-  },
-  subtitle: {
-    fontSize: 16,
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#666',
-  },
-  legendContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 10,
-  },
-  legendColor: {
-    width: 15,
-    height: 15,
-    borderRadius: 8, // Lingkaran
-    marginRight: 5,
-  },
-  legendText: {
-    fontSize: 14,
-    color: '#333',
-  },
-});
-
-export default ExpenseIncomeDotsComparison;
+export default NonInteractivePieChart;

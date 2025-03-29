@@ -12,8 +12,6 @@ import SelectAmountScreen from '../Screens/dashboard/addTransaction/selectAmount
 import HomeScreen from "../Screens/dashboard/Home/HomeScreen";
 
 import ExpensesReport from '../Screens/dashboard/expensesReport/ExpensesReportScreen';
-
-
 import TestingScreen from '../Screens/TestingScreen';
 // stack
 const Stack = createStackNavigator();

@@ -1,24 +1,61 @@
 import React from 'react';
-import { View, Text, Dimensions, StyleSheet } from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
+import { View, Text, Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
+import { LineChart,PieChart } from 'react-native-chart-kit';
+import { useTransactionUtils } from '../../../context/TransactionsContext';
 
 const ExpensesReport = () => {
   const screenWidth = Dimensions.get('window').width;
-  // Data contoh untuk 7 hari
+  const { transactionsData } = useTransactionUtils();
+  const isThisWeek = (date) => {
+    const now = new Date(); // Tambahkan deklarasi ini
+    const transactionDate = new Date(date);
+    
+    // Normalisasi waktu ke 00:00:00 untuk perbandingan
+    transactionDate.setHours(0, 0, 0, 0);
+    
+    // Hitung awal minggu (Senin)
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - (now.getDay() || 7) + 1);
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    // Hitung akhir minggu (Minggu)
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    
+    return transactionDate >= startOfWeek && transactionDate <= endOfWeek;
+  };
+  
+  const thisWeekTransactionsData = transactionsData.filter(item => isThisWeek(item.date));
+//   console.log("Real this week transactions data:", thisWeekTransactionsData);
   const chartData = {
-    labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
+    labels: thisWeekTransactionsData.map(item => {
+        const date = new Date(item.date);
+        return date.toLocaleDateString('en-US', { weekday: 'short' });
+      }),
     datasets: [
       {
-        data: [1200000, 1900000, 3000000, 2500000, 2200000, 1800000, 3500000],
-        color: (opacity = 1) => `rgba(75, 192, 192, ${opacity})`, // Hijau untuk income
+        data: thisWeekTransactionsData
+          .filter(item => item.type === "income")
+          .map(item => parseFloat(item.amount)),
+        color: (opacity = 1) => `rgba(75, 192, 192, ${opacity})`,
       },
       {
-        data: [800000, 1100000, 1500000, 1300000, 1800000, 900000, 1200000],
-        color: (opacity = 1) => `rgba(255, 99, 132, ${opacity})`, // Merah untuk expenses
+        data: thisWeekTransactionsData
+          .filter(item => item.type === "expense")
+          .map(item => parseFloat(item.amount)),
+        color: (opacity = 1) => `rgba(255, 99, 132, ${opacity})`,
       }
-    ],
-    legend: ['Income', 'Expenses']
+    ]
   };
+    const expensesData = thisWeekTransactionsData
+    .filter(item => item.type === "expense")
+    .map((item, index) => ({
+      name: item.category.name,
+      amount: parseFloat(item.amount),
+      color: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40'][index % 6]
+    }));
+    const totalExpenses = expensesData.reduce((sum, item) => sum + item.amount, 0);
 
   const chartConfig = {
     backgroundColor: '#ffffff',
@@ -36,26 +73,26 @@ const ExpensesReport = () => {
       strokeDasharray: '0',
     },
     formatYLabel: (value) => {
-      if (value >= 1000000) {
-        return `Rp${(value / 1000000).toFixed(1)}jt`;
-      }
-      if (value >= 1000) {
-        return `Rp${(value / 1000).toFixed(0)}rb`;
-      }
-      return `Rp${value}`;
-    },
+        if (value >= 1000000) {
+          return `$${(value / 1000000).toFixed(1)}M`; // Jutaan dollar (1.2M)
+        }
+        if (value >= 1000) {
+          return `$${(value / 1000).toFixed(0)}K`; // Ribuan dollar (250K)
+        }
+        return `$${value}`; // Nilai biasa ($500)
+      },
     propsForDots: {
       r: '6', // Ukuran titik
       strokeWidth: '2',
       stroke: '#ffffff', // Warna outline titik
     }
   };
-
+  const handleOnDataPointClick = () =>{
+    console.log("dot click")
+  }
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Perbandingan Income vs Expenses</Text>
-      <Text style={styles.subtitle}>Per Hari dalam Seminggu (Titik)</Text>
-      
+      <Text style={styles.title}>This Week</Text>
       <LineChart
         transparent
         data={chartData}
@@ -67,9 +104,8 @@ const ExpensesReport = () => {
         style={{
           marginVertical: 8,
           borderRadius: 16,
-         
         }}
-        yAxisLabel="Rp"
+        yAxisLabel="$"
         verticalLabelRotation={0}
         bezier={false} // Garis lurus
         withShadow={false} // Tanpa shadow
@@ -77,6 +113,8 @@ const ExpensesReport = () => {
         withOuterLines={true}
         withDots={true} // Tampilkan titik
         withLine={false} // Sembunyikan garis
+        onDataPointClick={handleOnDataPointClick}
+        
       />
       
       <View style={styles.legendContainer}>
@@ -89,6 +127,48 @@ const ExpensesReport = () => {
           <Text style={styles.legendText}>Expenses</Text>
         </View>
       </View>
+       <View style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            <PieChart
+              data={expensesData}
+              width={Dimensions.get('window').width - 16}
+              height={220}
+              chartConfig={{
+                backgroundColor: '#ffffff',
+                backgroundGradientFrom: '#ffffff',
+                backgroundGradientTo: '#ffffff',
+                decimalPlaces: 1,
+                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              }}
+              accessor="amount"
+              backgroundColor="transparent"
+              paddingLeft="15"
+              absolute={false}
+              hasLegend={true}
+              avoidFalseZero={true}
+              style={{
+                marginVertical: 8,
+                borderRadius: 16,
+              }}
+            />
+      
+            <View style={{
+              marginTop: 20,
+              padding: 10,
+              backgroundColor: '#e0e0e0',
+              borderRadius: 5,
+            }}>
+              <Text style={{
+                fontWeight: 'bold',
+                fontSize: 16,
+              }}>
+                Total Pengeluaran: ${totalExpenses.toFixed(2)}
+              </Text>
+            </View>
+          </View>
     </View>
   );
 };

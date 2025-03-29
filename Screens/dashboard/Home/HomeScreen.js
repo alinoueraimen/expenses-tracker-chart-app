@@ -20,7 +20,7 @@ function HomeScreen() {
     <View style={styles.container}>
       <TouchableOpacity 
               style={tw`bg-blue-600 py-3 px-4 rounded-lg`}
-              
+              onPress={()=>(navigateAndKeepTheRoutes("expensesReport"))}
             >
               <Text style={tw`text-white text-center font-medium`}>View report</Text>
             </TouchableOpacity>

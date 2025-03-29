@@ -30,18 +30,12 @@ function AddTransactionScreen() {
   const {navigateAndKeepTheRoutes,navigateToPrevRoute} = useNavigationUtils();
   const {transactionsData,setTransactionData} = useTransactionUtils();
   const handleSubmit = (values) => {
-    console.log('Submitted values:', {
-      amount: values.amount,
-      type:values.type,
-      category: values.category,
-      date: values.date,
-      description: values.description
-    });
+
     const transaction = {
       amount: values.amount,
       type:values.type,
       category: values.category,
-      date: values.date,
+      date: `${values.date}`,
       description: values.description
     }
     setTransactionData(prev=>[...prev,transaction])
