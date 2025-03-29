@@ -5,14 +5,20 @@ import * as Yup from 'yup';
 import tw from 'tailwind-react-native-classnames';
 // import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import useNavigationUtils from '../../../navigation/navigationUtils';
 import DatePicker from '../../../components/dashboard/addTransaction/datePicker/DatePicker';
+import useNavigationUtils from '../../../navigation/navigationUtils';
+import { useTransactionUtils } from '../../../context/TransactionsContext';
+
+
 const ExpensesSchema = Yup.object().shape({
   amount: Yup.number()
-    .required('jumlah wajib diisi')
-    .positive('Tidak boleh negatif'),
-  category: Yup.string().required('kategori wajib diisi'),
-  date: Yup.date().required('tanggal wajib diisi'),
+    .required('Amount is required')
+    .positive('Must be a positive number'),
+  type:Yup.string().required(`
+    please select a type (expenses/income)
+    `),
+  category: Yup.object().required('transaction category is required'),
+  date: Yup.date().required('date of transaction is required'),
 });
 
 function AddTransactionScreen() {
@@ -22,7 +28,7 @@ function AddTransactionScreen() {
   const [selectedType,setSelectedType] = useState(); 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const {navigateAndKeepTheRoutes,navigateToPrevRoute} = useNavigationUtils();
-  
+  const {transactionsData,setTransactionData} = useTransactionUtils();
   const handleSubmit = (values) => {
     console.log('Submitted values:', {
       amount: values.amount,
@@ -31,6 +37,14 @@ function AddTransactionScreen() {
       date: values.date,
       description: values.description
     });
+    const transaction = {
+      amount: values.amount,
+      type:values.type,
+      category: values.category,
+      date: values.date,
+      description: values.description
+    }
+    setTransactionData(prev=>[...prev,transaction])
     navigateToPrevRoute();
   };
 
@@ -72,10 +86,10 @@ function AddTransactionScreen() {
             )}
             {/* Input Type Transaction */}
             <View style={[tw`flex flex-row w-full border mb-4 border-gray-300`,{height:50}]}>
-              <TouchableOpacity style={[{flex:1},tw`${selectedType === "expenses" && 'border'} justify-center items-center`]}
+              <TouchableOpacity style={[{flex:1},tw`${selectedType === "expense" && 'border'} justify-center items-center`]}
               onPress={()=>{
-                setSelectedType("expenses")
-                setFieldValue('type',`expenses`)
+                setSelectedType("expense")
+                setFieldValue('type',`expense`)
               }}
               >
               <Icon name="arrow-circle-down" size={50} color="#e74c3c" />
@@ -99,7 +113,7 @@ function AddTransactionScreen() {
                style={tw`border border-gray-300 p-3 rounded mb-4 flex flex-row  `}
               >
               <Icon style={tw`mr-5`} name='th-large' size={20} color={"#000"}/>
-              {selectedCategory?<Text style={{color:"gray"}}>{selectedCategory}</Text>:<Text style={{color:"gray"}}>Select Category</Text>}
+              {selectedCategory?<Text style={{color:"gray"}}>{selectedCategory.name}</Text>:<Text style={{color:"gray"}}>Select Category</Text>}
              </TouchableOpacity>
             {touched.category && errors.category && (
               <Text style={tw`text-red-500 text-sm mt-1`}>{errors.category}</Text>

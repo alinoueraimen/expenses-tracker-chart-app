@@ -9,7 +9,11 @@ function SelectCategoryScreen ({route}){
     const {navigateToPrevRoute} =useNavigationUtils();
     const handleCategoryBtnPress= ()=>{
         console.log('press')
-        onCategorySelect("food"
+        onCategorySelect(
+            {
+            name : "food",
+            imgID:"cutlery"
+        }
         )
         navigateToPrevRoute()
     }
