@@ -1,20 +1,14 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-
+import AppNavigator from "./navigation/AppNavigator";
+import { StatusBar } from "expo-status-bar";
+import ContextProviderWrapper from "./utils/ContextProviderWrapper";
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>chart app </Text>
-      <StatusBar style="auto" />
-    </View>
+  <>
+       <StatusBar style="auto" />
+       <ContextProviderWrapper>
+         <AppNavigator/>
+       </ContextProviderWrapper>
+  </>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
