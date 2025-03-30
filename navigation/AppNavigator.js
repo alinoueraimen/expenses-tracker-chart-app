@@ -19,7 +19,7 @@ const Stack = createStackNavigator();
 function AppNavigator(){
     return(
         <NavigationContainer>
-            <Stack.Navigator initialRouteName="home">
+            <Stack.Navigator initialRouteName="test">
                 <Stack.Screen name="addTransaction"
                 component={AddTransactionScreen}
                 options={{headerShown:false}}

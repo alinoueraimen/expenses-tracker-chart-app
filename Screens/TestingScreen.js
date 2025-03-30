@@ -1,102 +1,119 @@
-import React from 'react';
-import { View, Text, Dimensions } from 'react-native';
-import { PieChart } from 'react-native-chart-kit';
+import { Text, View, TextInput, Button, StyleSheet } from 'react-native'
+import React, { useState } from 'react'
+import * as Yup from 'yup';
+import { Formik } from 'formik';
+import useAuth from '../services/supabase/auth/useAuth';
 
-const NonInteractivePieChart = () => {
-  const thisWeekTransactions = [
-    { 
-      amount: "25", 
-      category: { name: "Coffee" }, 
-      type: "expense" 
-    },
-    { 
-      amount: "120", 
-      category: { name: "Freelance" }, 
-      type: "income" 
-    },
-    { 
-      amount: "50", 
-      category: { name: "Transport" }, 
-      type: "expense" 
-    },
-    { 
-      amount: "80", 
-      category: { name: "Lunch" }, 
-      type: "expense" 
-    },
-    { 
-      amount: "200", 
-      category: { name: "Salary" }, 
-      type: "income" 
-    },
-    { 
-      amount: "60", 
-      category: { name: "Entertainment" }, 
-      type: "expense" 
-    },
-    { 
-      amount: "30", 
-      category: { name: "Groceries" }, 
-      type: "expense" 
-    }
-  ];
+const authSchema = Yup.object().shape({
+  email: Yup
+    .string()
+    .email("Invalid email format")
+    .required("Email is required"),
+  password: Yup
+    .string()
+    .min(8, 'Password must contain minimally 8 characters')
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/,
+      'Password must contain uppercase, lowercase, unique characters, and numbers'
+    )
+    .required("Password required")
+});
 
-  // Proses data expenses
-  const expensesData = thisWeekTransactions
-    .filter(item => item.type === "expense")
-    .map((item, index) => ({
-      name: item.category.name,
-      amount: parseFloat(item.amount),
-      color: ['#FF6384','#36A2EB','#FFCE56','#4BC0C0','#9966FF','#FF9F40'][index % 6]
-    }));
-
-  const totalExpenses = expensesData.reduce((sum, item) => sum + item.amount, 0);
-
+export default function TestingScreen() {
+  const [credentials, setCredentials] = useState({
+    email: '',
+    password: ''
+  });
+  
+  const { handleAuthViaEmailAndPass } = useAuth();
+  
+  const handleLogin = (values) => {
+    // Memperbarui credentials state dengan nilai dari form
+    setCredentials(values);
+    // Memanggil fungsi autentikasi dengan nilai dari form
+    handleAuthViaEmailAndPass("signup",values);
+  };
+  
   return (
-    <View style={{
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#f5fcff',
-    }}>
-      <PieChart
-        data={expensesData}
-        width={Dimensions.get('window').width - 16}
-        height={220}
-        chartConfig={{
-          backgroundColor: '#ffffff',
-          backgroundGradientFrom: '#ffffff',
-          backgroundGradientTo: '#ffffff',
-          decimalPlaces: 1,
-          color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-        }}
-        accessor="amount"
-        backgroundColor="transparent"
-        paddingLeft="15"
-        absolute={false}
-        hasLegend={true}
-        avoidFalseZero={true}
-        style={{
-          marginVertical: 8,
-          borderRadius: 16,
-        }}
-      />
-
-      <View style={{
-        marginTop: 20,
-        padding: 10,
-        backgroundColor: '#e0e0e0',
-        borderRadius: 5,
-      }}>
-        <Text style={{
-          fontWeight: 'bold',
-          fontSize: 16,
-        }}>
-          Total Pengeluaran: ${totalExpenses.toFixed(2)}
-        </Text>
+    <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerText}>Log in</Text>
       </View>
+      
+      <Formik
+        initialValues={{ email: '', password: '' }}
+        validationSchema={authSchema}
+        onSubmit={handleLogin}
+      >
+        {({ handleChange, handleSubmit, values, errors, touched }) => (
+          <View style={styles.formContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={values.email}
+              onChangeText={handleChange('email')}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            {touched.email && errors.email && (
+              <Text style={styles.errorText}>{errors.email}</Text>
+            )}
+            
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              value={values.password}
+              onChangeText={handleChange('password')}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+            {touched.password && errors.password && (
+              <Text style={styles.errorText}>{errors.password}</Text>
+            )}
+            
+            <View style={styles.buttonContainer}>
+              <Button 
+                onPress={handleSubmit} 
+                title="Login" 
+              />
+            </View>
+          </View>
+        )}
+      </Formik>
     </View>
   );
-};
+}
 
-export default NonInteractivePieChart;
+const styles = StyleSheet.create({
+  container: {
+    paddingVertical: 50,
+    paddingHorizontal: 30,
+    flex: 1,
+  },
+  headerContainer: {
+    marginBottom: 20,
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  formContainer: {
+    width: '100%',
+  },
+  input: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginVertical: 10,
+    paddingHorizontal: 10,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginBottom: 10,
+  },
+  buttonContainer: {
+    marginTop: 20,
+  }
+});

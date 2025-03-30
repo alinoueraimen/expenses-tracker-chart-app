@@ -7,7 +7,7 @@ export default function App() {
   const {dev} =Constant.expoConfig.extra
 useEffect(()=>{
   console.log(`we are in ${dev} mode`)
-})
+},[])
   return (
   <>
        <StatusBar style="auto" />

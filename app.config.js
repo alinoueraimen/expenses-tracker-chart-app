@@ -2,6 +2,7 @@ require('dotenv').config();
 export default {
   expo: {
     name: "chart-app",
+    scheme:"chart-app",
     slug: "chart-app",
     version: "1.0.0",
     orientation: "portrait",
@@ -28,11 +29,20 @@ export default {
       }
     },
     web: {
-      favicon: "./assets/favicon.png"
+      favicon: "./assets/favicon.png",
+      redirectUrl:"chart-app://"
     },
     extra :{
-        dev : process.env.ENV
-    }
-    
+        dev : process.env.ENV,
+        projectUrl : process.env.PROJECT_URL,
+        projectApiKey : process.env.PROJECT_API_KEY,
+        googleClientId : process.env.GOOGLE_CLIENT_ID,
+        googleClientSecret : process.env.GOOGLE_CLIENT_SECRET,
+        SupabaseRedirectLink : process.env.REDIRECT_LINK_SUPABASE,
+         ExpoRedirectLink: process.env.REDIRECT_LINK_EXPO
+    },
+    plugins :[
+      "expo-secure-store"
+    ]
   }
 };
