@@ -1,34 +1,52 @@
-import { supabase } from "../../init";
+// hooks/useAuth.js
+import useNavigationUtils from "../../../../navigation/navigationUtils";
+import { Alert } from "react-native";
+import { supabase } from "../../../../services/supabase/init";
+export const useHandleLogin = () => {
+    const { navigateAndKeepTheRoutes } = useNavigationUtils();
 
-/**
- * Handle authentication (sign-up/sign-in) with email and password.
- * @param {"signup" | "signin"} action - Type of action.
- * @param {{ email: string, password: string }} credentials - User credentials.
- * @returns {Promise<any>} - Supabase auth response data.
- * @throws {Error} - If parameters are invalid or auth fails.
- */
-async function handleAuthViaEmailAndPass(action, credentials) {
-  if (!action || !credentials) {
-    throw new Error("Invalid parameters: action and credentials are required");
-  }
+    const handleLogin = async (values) => {
+        const { error, data } = await supabase.auth.signInWithPassword({
+            email: values.email,
+            password: values.password
+        });
 
-  try {
-    if (action === "signup") {
-      const { data, error } = await supabase.auth.signUp(credentials);
-      if (error) throw error;
-      console.log("sign up berhasil dengan data :",{data})
-      return data;
-    } else if (action === "signin") {
-      const { data, error } = await supabase.auth.signInWithPassword(credentials);
-      if (error) throw error;
+        if (error) {
+            Alert.alert("Login Gagal", error.message);
+            return { error };
+        }
 
-      return data;
-    } else {
-      throw new Error("Unknown action: must be 'signup' or 'signin'");
-    }
-  } catch (error) {
-    console.error(`Auth error (${action}):`, error);
-    throw new Error(`Auth failed: ${error.message}`);
-  }
+        if (data.session) {
+            Alert.alert("Login Berhasil");
+            navigateAndKeepTheRoutes("home");
+        }
+
+        
+    };
+
+    return { handleLogin };
+};
+export const useHandleRegister=()=>{
+   const {navigateAndKeepTheRoutes} =useNavigationUtils()
+      const handleSignUp = (values) => {
+          console.log('Form Values:', values);
+          // Handle sign-up logic here
+          supabase.auth.signUp({
+              email: values.email,
+              password: values.password,
+          }).then(({error,data})=>{
+              if(error){
+                  console.log("terjadi error",error);
+                  Alert.alert("Sign Up Gagal",error.message)
+              }else{
+                  
+                  if((data.user.user_metadata.email_verified) === false){ 
+                      navigateAndKeepTheRoutes("verifyEmail",{email : data.user.email})
+                      console.log("berhasil mendaftar")
+                  }
+              
+              }
+          })
+      };
+      return { handleSignUp };
 }
-export default handleAuthViaEmailAndPass

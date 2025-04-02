@@ -1,8 +1,8 @@
-import { Text, View, TextInput, Button, StyleSheet } from 'react-native'
-import React, { useState } from 'react'
+import { Text, View, TextInput, Button, StyleSheet, ActivityIndicator } from 'react-native';
+import React from 'react';
 import * as Yup from 'yup';
 import { Formik } from 'formik';
-import useAuth from '../services/supabase/auth/useAuth';
+import { useAuth } from '../services/supabase/auth/useAuth'; // Pastikan path ini benar
 
 const authSchema = Yup.object().shape({
   email: Yup
@@ -14,24 +14,23 @@ const authSchema = Yup.object().shape({
     .min(8, 'Password must contain minimally 8 characters')
     .matches(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/,
-      'Password must contain uppercase, lowercase, unique characters, and numbers'
+      'Password must contain uppercase, lowercase, and numbers'
     )
     .required("Password required")
 });
 
 export default function TestingScreen() {
-  const [credentials, setCredentials] = useState({
-    email: '',
-    password: ''
-  });
+  const { signUp, loading, error: authError,session } = useAuth();
   
-  const { handleAuthViaEmailAndPass } = useAuth();
-  
-  const handleLogin = (values) => {
-    // Memperbarui credentials state dengan nilai dari form
-    setCredentials(values);
-    // Memanggil fungsi autentikasi dengan nilai dari form
-    handleAuthViaEmailAndPass("signup",values);
+  const handleLogin = async (values) => {
+    try {
+      await signUp(values.email, values.password)
+      console.log("berhasil !!")
+      // Jika login berhasil, pengguna akan diarahkan otomatis melalui onAuthStateChange
+    } catch (error) {
+      console.error("Login error:", error);
+      // Error sudah dihandle di useAuth, tidak perlu dihandle lagi di sini
+    }
   };
   
   return (
@@ -54,6 +53,7 @@ export default function TestingScreen() {
               onChangeText={handleChange('email')}
               keyboardType="email-address"
               autoCapitalize="none"
+              editable={!loading}
             />
             {touched.email && errors.email && (
               <Text style={styles.errorText}>{errors.email}</Text>
@@ -66,16 +66,26 @@ export default function TestingScreen() {
               onChangeText={handleChange('password')}
               secureTextEntry
               autoCapitalize="none"
+              editable={!loading}
             />
             {touched.password && errors.password && (
               <Text style={styles.errorText}>{errors.password}</Text>
             )}
             
+            {authError && (
+              <Text style={styles.errorText}>{authError.message}</Text>
+            )}
+            
             <View style={styles.buttonContainer}>
-              <Button 
-                onPress={handleSubmit} 
-                title="Login" 
-              />
+              {loading ? (
+                <ActivityIndicator size="small" color="#0000ff" />
+              ) : (
+                <Button 
+                  onPress={handleSubmit} 
+                  title="Login" 
+                  disabled={loading}
+                />
+              )}
             </View>
           </View>
         )}
