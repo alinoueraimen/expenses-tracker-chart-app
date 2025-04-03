@@ -1,129 +1,236 @@
-import { Text, View, TextInput, Button, StyleSheet, ActivityIndicator } from 'react-native';
-import React from 'react';
-import * as Yup from 'yup';
-import { Formik } from 'formik';
-import { useAuth } from '../services/supabase/auth/useAuth'; // Pastikan path ini benar
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { supabase } from '../services/supabase/init'; // Adjust the import based on your project structure
 
-const authSchema = Yup.object().shape({
-  email: Yup
-    .string()
-    .email("Invalid email format")
-    .required("Email is required"),
-  password: Yup
-    .string()
-    .min(8, 'Password must contain minimally 8 characters')
-    .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/,
-      'Password must contain uppercase, lowercase, and numbers'
-    )
-    .required("Password required")
-});
+const PasswordResetScreen = () => {
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [step, setStep] = useState(1); // 1: request, 2: verify, 3: success
+  const [isLoading, setIsLoading] = useState(false);
 
-export default function TestingScreen() {
-  const { signUp, loading, error: authError,session } = useAuth();
-  
-  const handleLogin = async (values) => {
+  const handleSendOTP = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email');
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      await signUp(values.email, values.password)
-      console.log("berhasil !!")
-      // Jika login berhasil, pengguna akan diarahkan otomatis melalui onAuthStateChange
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: 'your-app-scheme://reset-password' // For deep linking
+        }
+      });
+
+      if (error) throw error;
+      
+      setStep(2);
     } catch (error) {
-      console.error("Login error:", error);
-      // Error sudah dihandle di useAuth, tidak perlu dihandle lagi di sini
+      Alert.alert('Error', error.message || 'Failed to send OTP');
+    } finally {
+      setIsLoading(false);
     }
   };
-  
+
+  const handleResetPassword = async () => {
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // First verify OTP
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token: otp,
+        type: 'email'
+      });
+
+      if (verifyError) throw verifyError;
+
+      // Then update password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (updateError) throw updateError;
+
+      setStep(3);
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Failed to reset password');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.headerText}>Log in</Text>
-      </View>
-      
-      <Formik
-        initialValues={{ email: '', password: '' }}
-        validationSchema={authSchema}
-        onSubmit={handleLogin}
-      >
-        {({ handleChange, handleSubmit, values, errors, touched }) => (
-          <View style={styles.formContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={values.email}
-              onChangeText={handleChange('email')}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              editable={!loading}
-            />
-            {touched.email && errors.email && (
-              <Text style={styles.errorText}>{errors.email}</Text>
-            )}
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              value={values.password}
-              onChangeText={handleChange('password')}
-              secureTextEntry
-              autoCapitalize="none"
-              editable={!loading}
-            />
-            {touched.password && errors.password && (
-              <Text style={styles.errorText}>{errors.password}</Text>
-            )}
-            
-            {authError && (
-              <Text style={styles.errorText}>{authError.message}</Text>
-            )}
-            
-            <View style={styles.buttonContainer}>
-              {loading ? (
-                <ActivityIndicator size="small" color="#0000ff" />
-              ) : (
-                <Button 
-                  onPress={handleSubmit} 
-                  title="Login" 
-                  disabled={loading}
-                />
-              )}
-            </View>
-          </View>
-        )}
-      </Formik>
+      {step === 1 && (
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>Reset Password</Text>
+          <Text style={styles.subtitle}>Enter your email to receive an OTP</Text>
+          
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          
+          <TouchableOpacity 
+            style={styles.button} 
+            onPress={handleSendOTP}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? 'Sending...' : 'Send OTP'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {step === 2 && (
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>Verify OTP</Text>
+          <Text style={styles.subtitle}>We sent a code to {email}</Text>
+          
+          <TextInput
+            style={styles.input}
+            placeholder="OTP Code"
+            value={otp}
+            onChangeText={setOtp}
+            keyboardType="number-pad"
+          />
+          
+          <TextInput
+            style={styles.input}
+            placeholder="New Password"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry
+          />
+          
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+          />
+          
+          <TouchableOpacity 
+            style={styles.button} 
+            onPress={handleResetPassword}
+            disabled={isLoading}
+          >
+            <Text style={styles.buttonText}>
+              {isLoading ? 'Processing...' : 'Reset Password'}
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity onPress={() => setStep(1)}>
+            <Text style={styles.linkText}>Back to email entry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {step === 3 && (
+        <View style={styles.successContainer}>
+          <Text style={styles.successTitle}>Password Updated!</Text>
+          <Text style={styles.successText}>
+            Your password has been successfully updated. You can now login with your new password.
+          </Text>
+          
+          <TouchableOpacity 
+            style={styles.button}
+            onPress={() => {
+              // Navigate to login screen
+              // navigation.navigate('Login');
+            }}
+          >
+            <Text style={styles.buttonText}>Back to Login</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 50,
-    paddingHorizontal: 30,
     flex: 1,
-  },
-  headerContainer: {
-    marginBottom: 20,
-  },
-  headerText: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    padding: 20,
+    justifyContent: 'center',
   },
   formContainer: {
     width: '100%',
   },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    marginVertical: 10,
-    paddingHorizontal: 10,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    fontSize: 16,
   },
-  errorText: {
-    color: 'red',
-    fontSize: 12,
-    marginBottom: 10,
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 15,
   },
-  buttonContainer: {
-    marginTop: 20,
-  }
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  linkText: {
+    color: '#007AFF',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  successContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#4CAF50',
+  },
+  successText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 30,
+    color: '#666',
+  },
 });
+
+export default PasswordResetScreen;

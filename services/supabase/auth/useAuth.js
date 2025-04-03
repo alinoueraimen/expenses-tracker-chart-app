@@ -13,6 +13,7 @@ export const AuthProvider = ({ children }) => {
     console.log("useEffect auth context")
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("get session ....",session)
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -27,7 +28,10 @@ export const AuthProvider = ({ children }) => {
 
     return () => subscription.unsubscribe();
   }, []);
-
+    useEffect(()=>{
+    console.log("user data",user);
+    console.log("session data",session);
+    },[session,user])
   const value = {
     user,
     session,

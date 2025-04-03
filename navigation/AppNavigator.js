@@ -25,7 +25,7 @@ const Stack = createStackNavigator();
 function AppNavigator(){
     return(
         <NavigationContainer>
-            <Stack.Navigator initialRouteName="register">
+            <Stack.Navigator initialRouteName="home" screenOptions={{headerShown:false}}>
                 {/* dashboard */}
                 <Stack.Screen name="addTransaction"
                 component={AddTransactionScreen}
@@ -43,7 +43,6 @@ function AppNavigator(){
                 component={HomeScreen}
                 options={{headerShown:false}}
                 />
-
                 <Stack.Screen name="expensesReport"
                 component={ExpensesReport}
                 options={{headerShown:false}}

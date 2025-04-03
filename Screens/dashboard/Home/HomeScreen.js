@@ -1,46 +1,129 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, TouchableOpacity, View, Dimensions, } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Dimensions, Alert, } from 'react-native';
 import tw from 'tailwind-react-native-classnames';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import useNavigationUtils from '../../../navigation/navigationUtils';
 import { useTransactionUtils } from '../../../context/TransactionsContext';
-
+import { supabase } from '../../../services/supabase/init';
+import { useAuth } from '../../../services/supabase/auth/useAuth';
 // import InputForm from '../components/dashboard/inputForm';
 function HomeScreen() {
-      const {transactionsData} =useTransactionUtils();  
-     
-     
-      
-      // Rest of your code
-  
+      const {transactionsData,setTransactionsData,loading} =useTransactionUtils();    
     const screenWidth = Dimensions.get("screen").width;
+    const {user,setUser,setSession} = useAuth();
     const {navigateAndKeepTheRoutes} = useNavigationUtils();
+    
+    useEffect(()=>{
+     
+      const fetchProfile = async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) {
+          console.error('Error fetching transactions:', error);
+        } else {
+          console.log('Fetched transactions:', data);
+          setUser(data)
+        }
+      };
+      if(user){
+        fetchProfile(); 
+      }else{
+        Alert.alert('login first')
+      }
+    },[])
+    useEffect(()=>{
+      console.log("user data",user)
+    },[user])
+    
   return (
     <View style={styles.container}>
+    {!user ? <TouchableOpacity onPress={()=>navigateAndKeepTheRoutes("login")} style={[{
+      borderWidth:2,
+      width:50,
+      height:30,
+      borderRadius:20,
+      marginRight:2,}]}>
+     <Text>
+     login
+     </Text> 
+    </TouchableOpacity>
+    :
+    <View style={[{
+      flexDirection:"row",
+      alignItems:"center",
+    }]}>
+      <TouchableOpacity style={[{
+        backgroundColor:"black",
+        width:40,
+        height:40,
+        borderRadius:20,
+        marginRight:2,
+        
+      }]}
+      onPress={async()=>{await supabase.auth.signOut()
+  
+        setSession(null);  
+        setUser(null);
+        setTransactionsData([])
+
+      }}
+      ></TouchableOpacity>
+      <View>
+       
+        <Text style={[{
+          
+        }]}>
+            {user.user_metadata.username}
+            {user.user_metadata.is_admin ? " (admin)" : ""} 
+        </Text>
+        {transactionsData.amount ? 
+        <Text style={[{
+          fontSize:20,
+          fontWeight:"bold",
+        }]}>
+          {transactionsData.amount} $    
+        </Text> :
+         <Text style={[{
+          fontSize:17,
+          fontWeight:"bold",
+        }]}>
+          0.00$
+        </Text>
+        }
+      </View>
+    </View>
+    }
+      
+      {/* view report button */}
       <TouchableOpacity 
               style={tw`bg-blue-600 py-3 px-4 rounded-lg`}
               onPress={()=>(navigateAndKeepTheRoutes("expensesReport"))}
             >
               <Text style={tw`text-white text-center font-medium`}>View report</Text>
             </TouchableOpacity>
-      {
-       transactionsData.map((item, index) => {
+      {loading ? <View>
+        <Text>loading ....................</Text>
+      </View>
+      :  
+      transactionsData.map((item, index) => {
         // Convert the date to string first
-        const dateString = new Date(item.date).toLocaleDateString();
+        const dateString = new Date(item.transaction_date).toLocaleDateString();
         
         // Determine styling based on transaction type
-        const isExpense = item.type === "expense";
+        const isExpense = item.transaction_type === "expense";
         const amountColor = isExpense ? "red" : "green";
         const iconName = isExpense ? "arrow-down" : "arrow-up"; // Assuming you have these icons available
         
         return (
           <View key={index} style={[tw`w-full rounded-lg border flex flex-row items-center justify-between p-5`, {height: 60}]}>
             <View style={tw`flex flex-row`}>
-              <Icon name={item.category.imgID} size={40}/>
+              <Icon name={item.category_imgID} size={40}/>
               <View style={tw`ml-2`}>
                 {/* name category */}
-                <Text>{item.category.name}</Text>
+                <Text>{item.category_name}</Text>
                 {/* date */}
                 <Text style={tw`text-gray-500`}>{dateString}</Text>
               </View>
@@ -55,7 +138,9 @@ function HomeScreen() {
           </View>
         );
       })
-      }
+    }
+
+      
       
     
     {/* Bottom Bar */}
