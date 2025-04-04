@@ -1,6 +1,8 @@
 import { useContext,createContext, useState,useEffect } from "react";
 import {supabase} from "../services/supabase/init";
 import { useAuth } from "../services/supabase/auth/useAuth";
+import {useAuthFirebase} from "../services/firebase/useAuth";
+import { getAllTransactionsByUser } from "../services/firebase/databases/transactionCollection";
 const TransactionContext = createContext();
 
 export function TransactionContextProvider({children}){
@@ -9,21 +11,18 @@ export function TransactionContextProvider({children}){
         []        
     );
     const {user} = useAuth();
+    const {firebaseUser} = useAuthFirebase();
     
     useEffect(()=>{
-        console.log(user)
-        if(user){
-            supabase.from('transactions').select('*').eq('user_id',user.id).then(({data,error})=>{
-                if(error) console.log("error fetching transactions data",error)
-                else{
-                    console.log("transactions data",data[0])
-                    setTransactionData(data)
-                }
-                setLoading(false)
+        console.log(firebaseUser)
+        if(firebaseUser){
+           getAllTransactionsByUser(firebaseUser.uid).then((res)=>{
+                console.log("transaction data",res)
+                setTransactionData(res)
             })
         }
         
-    },[user])
+    },[firebaseUser])
     useEffect(()=>{
 
         console.log("overall transaction datas :",transactionsData)

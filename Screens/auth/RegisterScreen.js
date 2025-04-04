@@ -3,8 +3,10 @@ import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert, Act
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import useNavigationUtils from '../../navigation/navigationUtils';
-import { supabase } from "../../services/supabase/init";
-
+// import { signUp } from '../../services/supabase/auth/useAuthUtils';
+import { signUp } from '../../services/firebase/useAuthUtils';
+import { insertIntoProfileTable } from '../../services/supabase/database/profileTable';
+import { addProfileDocIntoCollection } from '../../services/firebase/databases/profileCollection';
 const RegisterScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { navigateAndKeepTheRoutes } = useNavigationUtils();
@@ -24,52 +26,32 @@ const RegisterScreen = ({ navigation }) => {
 
   // Handle user registration
   const handleRegistration = async (values) => {
-    setIsLoading(true);
+    // setIsLoading(true);
     
-    try {
+    // try {
       // 1. Sign up with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
-        options: {
-          data: {
-            username: values.username,
-            is_admin: values.email === "alinuriman.dev@gmail.com",
-          }
-        }
-      });
-
-      if (authError) throw authError;
-
+    const authData =  await signUp(values);
+    console.log(authData.uid)
       // 2. Create profile in separate table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: authData.user.id,
-          created_at : new Date().toISOString(),
-          username: values.username,
-          email: values.email,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (profileError) throw profileError;
-
+    //  await insertIntoProfileTable(authData.user.id, values) 
+    await addProfileDocIntoCollection(authData.uid, values.username, values.email)
       // 3. Navigate based on email verification status
-      if (!authData.user?.user_metadata?.email_verified) {
-        navigateAndKeepTheRoutes("verifyEmail", { email: values.email });
-      } else {
-        Alert.alert('Registration Successful', 'Your account has been created successfully');
-      }
-    } catch (error) {
-      console.error('Registration error:', error);
-      Alert.alert(
-        "Registration Failed", 
-        error.message || 'An error occurred during registration'
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //     if (!authData.user?.user_metadata?.email_verified) {
+  //       navigateAndKeepTheRoutes("verifyEmail", { email: values.email });
+  //     } else {
+  //       Alert.alert('Registration Successful', 'Your account has been created successfully');
+  //     }
+  //   } catch (error) {
+  //     console.error('Registration error:', error);
+  //     Alert.alert(
+  //       "Registration Failed", 
+  //       error.message || 'An error occurred during registration'
+  //     );
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+    };
 
   // Form Input Component
   const FormInput = ({ field, placeholder, secureTextEntry = false, keyboardType = 'default' }) => (

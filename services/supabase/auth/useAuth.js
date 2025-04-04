@@ -1,8 +1,8 @@
 // contexts/AuthContext.js
 import { createContext, useContext, useEffect, useState } from 'react';
 import {supabase} from "../init"
-
 const AuthContext = createContext();
+
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -36,21 +36,8 @@ export const AuthProvider = ({ children }) => {
     user,
     session,
     loading,
-    signUp: async (email, password) => {
-      const { error,data } = await supabase.auth.signUp({ email, password });
-      console.log(data)
-      return { error };
-    },
-    signIn : async(email,password)=>{
-      const {error,data} = await supabase.auth.signIn({
-        email,password
-      })
-
-    },
-    signOut: async () => {
-      await supabase.auth.signOut();
-    },
-    // Tambahkan fungsi auth lainnya sesuai kebutuhan
+   
+   
   };
 
   return (

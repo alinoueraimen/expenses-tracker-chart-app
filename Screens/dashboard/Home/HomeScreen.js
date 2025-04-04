@@ -7,28 +7,29 @@ import useNavigationUtils from '../../../navigation/navigationUtils';
 import { useTransactionUtils } from '../../../context/TransactionsContext';
 import { supabase } from '../../../services/supabase/init';
 import { useAuth } from '../../../services/supabase/auth/useAuth';
+import {useAuthFirebase} from '../../../services/firebase/useAuth';
+import { getUserProfileByUserIdField } from '../../../services/firebase/databases/profileCollection';
+import { signOut } from '../../../services/firebase/viaEmailAndPass/signOut';
 // import InputForm from '../components/dashboard/inputForm';
 function HomeScreen() {
+  const [profile,setProfile] = useState();
       const {transactionsData,setTransactionsData,loading} =useTransactionUtils();    
     const screenWidth = Dimensions.get("screen").width;
     const {user,setUser,setSession} = useAuth();
+   const {firebaseUser,setFirebaseUser} =useAuthFirebase();
     const {navigateAndKeepTheRoutes} = useNavigationUtils();
     
     useEffect(()=>{
      
       const fetchProfile = async () => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (error) {
-          console.error('Error fetching transactions:', error);
-        } else {
-          console.log('Fetched transactions:', data);
-          setUser(data)
-        }
+        console.log(firebaseUser)
+        const profileData = await getUserProfileByUserIdField(firebaseUser.uid);
+
+        console.log("profile data",profileData)
+        setProfile(profileData)
       };
-      if(user){
+      if(firebaseUser){
+        console.log("pass and fethcing profile")
         fetchProfile(); 
       }else{
         Alert.alert('login first')
@@ -36,11 +37,11 @@ function HomeScreen() {
     },[])
     useEffect(()=>{
       console.log("user data",user)
-    },[user])
+    },[firebaseUser])
     
   return (
     <View style={styles.container}>
-    {!user ? <TouchableOpacity onPress={()=>navigateAndKeepTheRoutes("login")} style={[{
+    {!profile ? <TouchableOpacity onPress={()=>navigateAndKeepTheRoutes("login")} style={[{
       borderWidth:2,
       width:50,
       height:30,
@@ -63,7 +64,7 @@ function HomeScreen() {
         marginRight:2,
         
       }]}
-      onPress={async()=>{await supabase.auth.signOut()
+      onPress={async()=>{await signOut
   
         setSession(null);  
         setUser(null);
@@ -76,8 +77,7 @@ function HomeScreen() {
         <Text style={[{
           
         }]}>
-            {user.user_metadata.username}
-            {user.user_metadata.is_admin ? " (admin)" : ""} 
+            username
         </Text>
         {transactionsData.amount ? 
         <Text style={[{

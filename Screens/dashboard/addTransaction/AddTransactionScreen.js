@@ -9,7 +9,8 @@ import useNavigationUtils from '../../../navigation/navigationUtils';
 import { useTransactionUtils } from '../../../context/TransactionsContext';
 import { supabase } from '../../../services/supabase/init';
 import { useAuth } from '../../../services/supabase/auth/useAuth';
-
+import { addTransactionDoc } from '../../../services/firebase/databases/transactionCollection';
+import {useAuthFirebase} from '../../../services/firebase/useAuth';
 
 
 const ExpensesSchema = Yup.object().shape({
@@ -28,12 +29,14 @@ function AddTransactionScreen() {
   const { navigateToPrevRoute,navigateAndKeepTheRoutes } = useNavigationUtils();
   const { setTransactionData } = useTransactionUtils();
   const {user} =useAuth();
+  const {firebaseUser} = useAuthFirebase();
   const handleSubmit = async (values) => {
-      if(user){
+      if(firebaseUser){
         try {
+          console.log("firebase user (addTransaction) : ",firebaseUser)
           // Format data untuk PostgreSQL
           const transaction = {
-            user_id: user.id,
+            user_id: firebaseUser.uid,
             amount: parseFloat(values.amount), // Pastikan number, bukan string
             transaction_type: values.type,    // Sesuai nama kolom di database
             category_name: values.category.name,   // Simpan sebagai string
@@ -41,20 +44,22 @@ function AddTransactionScreen() {
             transaction_date: values.date.toISOString(), // Format ISO 8601
             description: values.description || null      // NULL jika kosong
           };
-    
+          
           console.log("Submitting transaction:", transaction);
-    
-          // Insert ke Supabase
-          const { data, error } = await supabase
-            .from('transactions')
-            .insert(transaction)
-            .select();
-    
-          if (error) throw error;
-    
-          console.log("Transaction saved successfully:", data);
           setTransactionData(prev => [...prev, transaction]);
           navigateToPrevRoute();
+          // insert ke firebase
+          await addTransactionDoc( transaction.user_id,transaction.amount,transaction.transaction_type,transaction.category_name,transaction.category_imgID,transaction.transaction_date,transaction.description)
+          // Insert ke Supabase
+          // const { data, error } = await supabase
+          //   .from('transactions')
+          //   .insert(transaction)
+          //   .select();
+          
+          // if (error) throw error;
+          
+          // console.log("Transaction saved successfully:", data);
+         
         } catch (error) {
           console.error("Error saving transaction:", error);
         }

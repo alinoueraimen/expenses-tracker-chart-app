@@ -3,8 +3,13 @@ import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert } fr
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import navigationUtils from '../../navigation/navigationUtils';
-import {supabase} from "../../services/supabase/init"
+// supabase
+// import { signIn } from '../../services/supabase/auth/useAuthUtils';
+// firebase
+import { signIn } from '../../services/firebase/useAuthUtils';
+import { useAuthFirebase } from '../../services/firebase/useAuth';
 // Validation schema using Yup
+
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email('Email tidak valid').required('Email wajib diisi'),
   password: Yup.string()
@@ -13,25 +18,24 @@ const LoginSchema = Yup.object().shape({
 });
 
 const LoginScreen = () => {
-    const {navigateAndKeepTheRoutes} = navigationUtils();
+    const {navigateAndResetAllRoutes,navigateAndKeepTheRoutes} = navigationUtils();
+    const {setFirebaseUser} = useAuthFirebase();
+    // handle login submit
   const handleLogin = async (values) => {
+    // retrieving target value
     console.log('Login data:', values);
-     const {error,data} = await supabase.auth.signInWithPassword({
-        email : values.email,
-        password : values.password
-    })
-    if(error){
-      console.log("terjadi error",error);
-      Alert.alert("Login Gagal",error.message)
-    }
-    console.log("data login",data);
-    if(data.session){
-      console.log("login berhasil")
-      Alert.alert("Login Berhasil")
-      navigateAndKeepTheRoutes("home")
-    }
-    console.log("login berhasil")
-    // Tambahkan logika login di sini
+    await signIn(values).then((data)=>{
+      console.log("data login",data);
+      if(data){
+        setFirebaseUser(data);
+        console.log('pass')
+        navigateAndResetAllRoutes("home")
+        console.log("login berhasil")
+      } 
+      // Tambahkan logika login di sini
+      
+     })
+  
 
   };
 
